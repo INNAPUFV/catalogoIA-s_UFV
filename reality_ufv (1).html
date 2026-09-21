@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reality UFV - Gestión de Recursos VR</title>
+
+  <!-- Tipografías Oficiales UFV: Roboto Slab, Roboto, Arimo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;500;700&family=Roboto+Slab:wght@600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons para iconografía profesional -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- SheetJS para lectura y análisis del Excel de Microsoft Forms (.xlsx) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --ufv-azul: #003865;
+      --ufv-azul-claro: #649eff;
+      --ufv-rosa-claro: #ff5d74;
+      --ufv-rosa-oscuro: #c03656;
+      --ufv-bg: #00192e;
+      --ufv-surface: #002542;
+      --ufv-surface-card: #002f54;
+      --ufv-border: rgba(100, 158, 255, 0.25);
+      --ufv-text: #ffffff;
+      --ufv-text-dim: #9eb5cc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--ufv-bg);
+      color: var(--ufv-text);
+      font-family: 'Roboto', 'Arimo', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, .brand-title, .kpi-num {
+      font-family: 'Roboto Slab', serif;
+    }
+
+    /* Cabecera Superior */
+    header {
+      background: var(--ufv-surface);
+      border-bottom: 2px solid var(--ufv-azul-claro);
+      padding: 0.9rem 1.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+    }
+
+    .brand-container {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .brand-logo-wrap {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--ufv-azul), var(--ufv-surface-card));
+      border: 1px solid var(--ufv-azul-claro);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ufv-azul-claro);
+      font-size: 1.25rem;
+      box-shadow: 0 0 14px rgba(100, 158, 255, 0.35);
+    }
+
+    .brand-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.4px;
+    }
+
+    .brand-title span {
+      color: var(--ufv-azul-claro);
+    }
+
+    nav {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--ufv-text-dim);
+      padding: 0.55rem 1.1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      color: #ffffff;
+      background: rgba(100, 158, 255, 0.12);
+    }
+
+    .nav-btn.active {
+      background: var(--ufv-azul);
+      color: var(--ufv-azul-claro);
+      border-color: var(--ufv-azul-claro);
+      box-shadow: 0 0 10px rgba(100, 158, 255, 0.25);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .btn-header {
+      background: var(--ufv-surface-card);
+      border: 1px solid var(--ufv-azul-claro);
+      color: #ffffff;
+      padding: 0.5rem 0.95rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-header:hover {
+      background: var(--ufv-azul-claro);
+      color: var(--ufv-bg);
+      transform: translateY(-1px);
+    }
+
+    /* Área Principal y Pestañas */
+    main {
+      flex: 1;
+      padding: 2rem;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .kpi-card {
+      background: var(--ufv-surface-card);
+      border: 1px solid var(--ufv-border);
+      border-radius: 10px;
+      padding: 1.4rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--ufv-azul-claro);
+    }
+
+    .kpi-card.warning::before {
+      background: var(--ufv-rosa-oscuro);
+    }
+
+    .kpi-card.alert::before {
+      background: var(--ufv-rosa-claro);
+    }
+
+    .kpi-title {
+      font-size: 0.8rem;
+      color: var(--ufv-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .kpi-num {
+      font-size: 2.3rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .kpi-sub {
+      font-size: 0.78rem;
+      color: var(--ufv-text-dim);
+      margin-top: 0.4rem;
+    }
+
+    .section-card {
+      background: var(--ufv-surface);
+      border: 1px solid var(--ufv-border);
+      border-radius: 10px;
+      padding: 1.6rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--ufv-border);
+      padding-bottom: 0.85rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .section-title i {
+      color: var(--ufv-azul-claro);
+    }
+
+    /* Grid de Visores */
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 1rem;
+    }
+
+    .device-card {
+      background: var(--ufv-surface-card);
+      border: 1px solid var(--ufv-border);
+      border-radius: 8px;
+      padding: 1.2rem 1rem;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .device-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--ufv-azul-claro);
+      box-shadow: 0 6px 16px rgba(100, 158, 255, 0.15);
+    }
+
+    .device-card.is-taller {
+      border-color: rgba(192, 54, 86, 0.45);
+    }
+
+    .device-tag {
+      font-size: 0.75rem;
+      color: var(--ufv-azul-claro);
+      background: rgba(100, 158, 255, 0.12);
+      border: 1px solid rgba(100, 158, 255, 0.25);
+      padding: 0.2rem 0.65rem;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 0.6rem;
+      font-weight: 600;
+    }
+
+    .device-id {
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      color: #ffffff;
+      font-family: 'Roboto Slab', serif;
+    }
+
+    .device-location {
+      font-size: 0.82rem;
+      color: var(--ufv-text-dim);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+
+    .status-badge {
+      font-size: 0.76rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-weight: 600;
+    }
+
+    .status-disponible {
+      background: rgba(100, 158, 255, 0.16);
+      color: var(--ufv-azul-claro);
+      border: 1px solid rgba(100, 158, 255, 0.35);
+    }
+
+    .status-taller {
+      background: rgba(192, 54, 86, 0.22);
+      color: var(--ufv-rosa-oscuro);
+      border: 1px solid rgba(192, 54, 86, 0.45);
+    }
+
+    .lab-description {
+      color: #d1dfed;
+      line-height: 1.7;
+      font-size: 0.95rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .lab-features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0 2rem 0;
+    }
+
+    .lab-feature-tile {
+      background: var(--ufv-surface-card);
+      border: 1px solid var(--ufv-border);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .lab-feature-tile i {
+      font-size: 1.4rem;
+      color: var(--ufv-azul-claro);
+      width: 32px;
+      text-align: center;
+    }
+
+    .lab-feature-tile .title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--ufv-text-dim);
+      font-weight: 600;
+    }
+
+    .lab-feature-tile .value {
+      font-size: 0.95rem;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .calendar-container {
+      overflow-x: auto;
+      border: 1px solid var(--ufv-border);
+      border-radius: 8px;
+      background: var(--ufv-surface-card);
+    }
+
+    .schedule-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+      font-size: 0.85rem;
+      min-width: 680px;
+    }
+
+    .schedule-table th {
+      background: var(--ufv-azul);
+      color: var(--ufv-azul-claro);
+      padding: 0.85rem;
+      font-weight: 700;
+      border: 1px solid var(--ufv-border);
+    }
+
+    .schedule-table td {
+      padding: 0.9rem 0.6rem;
+      border: 1px solid var(--ufv-border);
+    }
+
+    .cell-time {
+      background: var(--ufv-surface);
+      color: var(--ufv-text-dim);
+      font-weight: 600;
+      width: 130px;
+    }
+
+    .cell-free {
+      background: rgba(100, 158, 255, 0.05);
+      color: var(--ufv-azul-claro);
+      font-weight: 500;
+    }
+
+    .cell-maint {
+      background: rgba(192, 54, 86, 0.2);
+      color: var(--ufv-rosa-claro);
+      font-weight: 600;
+    }
+
+    /* Ventana Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 15, 30, 0.82);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--ufv-surface);
+      border: 1px solid var(--ufv-azul-claro);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 540px;
+      padding: 1.8rem;
+      position: relative;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1.2rem;
+      right: 1.2rem;
+      background: transparent;
+      border: none;
+      color: var(--ufv-text-dim);
+      font-size: 1.3rem;
+      cursor: pointer;
+    }
+
+    .modal-close:hover {
+      color: #ffffff;
+    }
+
+    .dropzone {
+      border: 2px dashed var(--ufv-border);
+      border-radius: 8px;
+      padding: 2.2rem 1rem;
+      text-align: center;
+      background: var(--ufv-surface-card);
+      margin-top: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dropzone:hover {
+      border-color: var(--ufv-azul-claro);
+      background: rgba(100, 158, 255, 0.08);
+    }
+
+    .dropzone i {
+      font-size: 2.5rem;
+      color: var(--ufv-azul-claro);
+      margin-bottom: 0.6rem;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--ufv-surface-card);
+      border: 1px solid var(--ufv-azul-claro);
+      color: #ffffff;
+      padding: 0.85rem 1.4rem;
+      border-radius: 8px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+      z-index: 1200;
+      font-size: 0.9rem;
+    }
+
+    .toast.show {
+      display: flex;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand-container" onclick="switchTab('home', event)">
+      <div class="brand-logo-wrap">
+        <i class="fa-solid fa-vr-cardboard"></i>
+      </div>
+      <div class="brand-title">Reality <span>UFV</span></div>
+    </div>
+
+    <nav>
+      <button class="nav-btn active" id="btn-tab-home" onclick="switchTab('home', event)">
+        <i class="fa-solid fa-house"></i> Inicio
+      </button>
+      <button class="nav-btn" id="btn-tab-inventory" onclick="switchTab('inventory', event)">
+        <i class="fa-solid fa-boxes-stacked"></i> Inventario Gafas
+      </button>
+      <button class="nav-btn" id="btn-tab-lab" onclick="switchTab('lab', event)">
+        <i class="fa-solid fa-cube"></i> Laboratorio Inmersivo
+      </button>
+    </nav>
+
+    <div class="header-actions">
+      <a href="https://forms.cloud.microsoft/e/FXZHkdBe8y" target="_blank" rel="noopener noreferrer" class="btn-header">
+        <i class="fa-solid fa-arrow-up-right-from-square" style="color: var(--ufv-rosa-claro);"></i>
+        <span>Formulario Profesores</span>
+      </a>
+      <button class="btn-header" onclick="openExcelModal()">
+        <i class="fa-solid fa-file-excel" style="color: var(--ufv-azul-claro);"></i>
+        <span>Sincronizar Excel</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- PESTAÑA: INICIO -->
+    <div id="tab-home" class="tab-content active">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-title"><i class="fa-solid fa-circle-check" style="color: var(--ufv-azul-claro);"></i> Visores Disponibles</div>
+          <div class="kpi-num" id="kpi-disponibles">18 / 20</div>
+          <div class="kpi-sub">Listos para docencia en el armario</div>
+        </div>
+        <div class="kpi-card warning">
+          <div class="kpi-title"><i class="fa-solid fa-wrench" style="color: var(--ufv-rosa-oscuro);"></i> En Taller / Mantenimiento</div>
+          <div class="kpi-num" id="kpi-taller">2</div>
+          <div class="kpi-sub">VR13 y VR20 en revisión técnica</div>
+        </div>
+        <div class="kpi-card alert">
+          <div class="kpi-title"><i class="fa-solid fa-hand-holding-hand" style="color: var(--ufv-rosa-claro);"></i> Préstamos Activos Hoy</div>
+          <div class="kpi-num" id="kpi-prestamos">0</div>
+          <div class="kpi-sub">Sincronizado con Microsoft Forms</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">
+            <i class="fa-solid fa-calendar-day"></i>
+            <span>Próximas Reservas (Día Siguiente)</span>
+          </div>
+          <span id="tomorrow-date-badge" style="font-size: 0.85rem; color: var(--ufv-azul-claro); font-weight: 500;"></span>
+        </div>
+        <div id="tomorrow-reservations-box" style="padding: 1.5rem; text-align: center; color: var(--ufv-text-dim); background: var(--ufv-surface-card); border-radius: 8px;">
+          <i class="fa-regular fa-calendar-check" style="font-size: 2rem; color: var(--ufv-azul-claro); margin-bottom: 0.6rem; display: block;"></i>
+          <p style="font-size: 0.92rem;">No hay reservas programadas para el día de mañana en la hoja de Microsoft Forms.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA: INVENTARIO GAFAS -->
+    <div id="tab-inventory" class="tab-content">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <span>Inventario de Visores VR (20 Unidades)</span>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--ufv-text-dim);">
+            Ubicación general: <strong style="color: #ffffff;">Armario</strong>
+          </div>
+        </div>
+
+        <div class="inventory-grid" id="inventory-grid-container">
+          <!-- Rellenado dinámicamente con VR1 a VR20 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- PESTAÑA: LABORATORIO INMERSIVO -->
+    <div id="tab-lab" class="tab-content">
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-title">
+            <i class="fa-solid fa-cube"></i>
+            <span>Laboratorio Inmersivo</span>
+          </div>
+        </div>
+
+        <p class="lab-description">
+          El laboratorio inmersivo es un espacio especializado para el diseño, preparación y desarrollo de experiencias de aprendizaje basadas en tecnologías de realidad extendida. Su finalidad es facilitar que docentes y estudiantes exploren entornos tridimensionales, simulaciones y recursos inmersivos que enriquecen la comprensión de conceptos complejos, aumentan la sensación de presencia y favorecen una mayor implicación del alumnado en el aprendizaje.
+        </p>
+
+        <p class="lab-description">
+          El laboratorio cuenta con un espacio de unos 30m2 y un aforo máximo real de 20 personas. Este espacio dispone de mobiliario como mesas y sillas, iluminación led para favorecer la inmersión, así como dos pizarras digitales. También dispone de una conexión WIFI independiente para asegurar una buena conectividad de los dispositivos y una experiencia fluida para el usuario.
+        </p>
+
+        <div class="lab-features-grid">
+          <div class="lab-feature-tile">
+            <i class="fa-solid fa-ruler-combined"></i>
+            <div>
+              <div class="title">Superficie</div>
+              <div class="value">30 m²</div>
+            </div>
+          </div>
+          <div class="lab-feature-tile">
+            <i class="fa-solid fa-users"></i>
+            <div>
+              <div class="title">Aforo Máximo</div>
+              <div class="value">20 personas</div>
+            </div>
+          </div>
+          <div class="lab-feature-tile">
+            <i class="fa-solid fa-chalkboard-user"></i>
+            <div>
+              <div class="title">Equipamiento</div>
+              <div class="value">2 Pizarras Digitales</div>
+            </div>
+          </div>
+          <div class="lab-feature-tile">
+            <i class="fa-solid fa-lightbulb"></i>
+            <div>
+              <div class="title">Ambiente</div>
+              <div class="value">Iluminación LED</div>
+            </div>
+          </div>
+          <div class="lab-feature-tile">
+            <i class="fa-solid fa-wifi"></i>
+            <div>
+              <div class="title">Conectividad</div>
+              <div class="value">WIFI Independiente</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header" style="margin-top: 1.5rem;">
+          <div class="section-title" style="font-size: 1.1rem;">
+            <i class="fa-solid fa-calendar-days"></i>
+            <span>Disponibilidad del Laboratorio Inmersivo</span>
+          </div>
+          <a href="https://outlook.office.com/calendar" target="_blank" rel="noopener noreferrer" class="btn-header" style="font-size: 0.78rem;">
+            <i class="fa-solid fa-arrow-up-right-from-square" style="color: var(--ufv-rosa-claro);"></i>
+            <span>Abrir en Outlook</span>
+          </a>
+        </div>
+
+        <div class="calendar-container">
+          <table class="schedule-table">
+            <thead>
+              <tr>
+                <th class="cell-time">Franja</th>
+                <th>Lunes</th>
+                <th>Martes</th>
+                <th>Miércoles</th>
+                <th>Jueves</th>
+                <th>Viernes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="cell-time">08:30 - 10:30</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+              </tr>
+              <tr>
+                <td class="cell-time">10:30 - 12:30</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+              </tr>
+              <tr>
+                <td class="cell-time">12:30 - 14:00</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+              </tr>
+              <tr>
+                <td class="cell-time">14:00 - 15:00</td>
+                <td colspan="5" class="cell-maint">Mantenimiento y Desinfección UV</td>
+              </tr>
+              <tr>
+                <td class="cell-time">15:00 - 17:00</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+              </tr>
+              <tr>
+                <td class="cell-time">17:00 - 19:30</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+                <td class="cell-free">Disponible</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL: SINCRONIZAR EXCEL -->
+  <div id="excel-modal" class="modal-overlay">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeExcelModal()">&times;</button>
+      <h3 style="font-size: 1.25rem; font-weight: 700; color: #ffffff; margin-bottom: 0.5rem;">
+        <i class="fa-solid fa-file-excel" style="color: var(--ufv-azul-claro); margin-right: 0.4rem;"></i>
+        Sincronizar Excel de Respuestas
+      </h3>
+      <p style="font-size: 0.88rem; color: var(--ufv-text-dim); line-height: 1.5;">
+        Carga el archivo <code>Solicitud de préstamo y reserva de gafas de realidad virtual.xlsx</code> exportado de Microsoft Forms para actualizar los préstamos y reservas.
+      </p>
+
+      <div class="dropzone" onclick="document.getElementById('excel-file-input').click()">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <div style="font-weight: 600; color: #ffffff; margin-bottom: 0.25rem;">Haz clic para seleccionar el archivo Excel</div>
+        <div style="font-size: 0.78rem; color: var(--ufv-text-dim);">Formatos admitidos: .xlsx o .xls</div>
+        <input type="file" id="excel-file-input" accept=".xlsx, .xls" style="display: none;" onchange="handleExcelUpload(event)">
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICACIÓN -->
+  <div id="toast-msg" class="toast">
+    <i class="fa-solid fa-circle-check" style="color: var(--ufv-azul-claro);"></i>
+    <span id="toast-text"></span>
+  </div>
+
+  <script>
+    // Configuración de visores: VR1 a VR20 (VR13 y VR20 en taller)
+    const devices = [];
+    for (let i = 1; i <= 20; i++) {
+      const code = 'VR' + i;
+      const isMaint = (code === 'VR13' || code === 'VR20');
+      devices.push({
+        id: code,
+        model: 'Meta Quest 2',
+        location: 'Armario',
+        status: isMaint ? 'taller' : 'disponible'
+      });
+    }
+
+    function switchTab(tabId, event) {
+      if (event) event.preventDefault();
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+      const targetTab = document.getElementById('tab-' + tabId);
+      const targetBtn = document.getElementById('btn-tab-' + tabId);
+
+      if (targetTab) targetTab.classList.add('active');
+      if (targetBtn) targetBtn.classList.add('active');
+    }
+
+    function renderInventory() {
+      const container = document.getElementById('inventory-grid-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      devices.forEach(dev => {
+        const isTaller = dev.status === 'taller';
+        const card = document.createElement('div');
+        card.className = 'device-card' + (isTaller ? ' is-taller' : '');
+        card.innerHTML = `
+          <span class="device-tag">${dev.model}</span>
+          <div class="device-id">${dev.id}</div>
+          <div class="device-location">
+            <i class="fa-solid fa-door-closed"></i> Ubicación: ${dev.location}
+          </div>
+          <span class="status-badge ${isTaller ? 'status-taller' : 'status-disponible'}">
+            <i class="fa-solid ${isTaller ? 'fa-wrench' : 'fa-check'}"></i>
+            ${isTaller ? 'En Taller' : 'Disponible'}
+          </span>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateTomorrowDate() {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const dateStr = tomorrow.toLocaleDateString('es-ES', options);
+      const badge = document.getElementById('tomorrow-date-badge');
+      if (badge) {
+        badge.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+      }
+    }
+
+    function openExcelModal() {
+      document.getElementById('excel-modal').classList.add('active');
+    }
+
+    function closeExcelModal() {
+      document.getElementById('excel-modal').classList.remove('active');
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast-msg');
+      const textEl = document.getElementById('toast-text');
+      if (toast && textEl) {
+        textEl.textContent = text;
+        toast.classList.add('show');
+        setTimeout(() => {
+          toast.classList.remove('show');
+        }, 3200);
+      }
+    }
+
+    function handleExcelUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+          closeExcelModal();
+          showToast(`¡Excel sincronizado! ${jsonData.length} respuestas analizadas.`);
+        } catch (err) {
+          showToast('Error al leer el archivo Excel.');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderInventory();
+      updateTomorrowDate();
+    });
+  </script>
+</body>
+</html>
